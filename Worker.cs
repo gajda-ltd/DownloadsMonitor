@@ -29,21 +29,28 @@ namespace DownloadsMonitor
 
                 if (this.extensions.Contains(fileInfo.Extension))
                 {
-                    using (var context = new DownloadsContext())
+                    try
                     {
-                        var md5 = fileInfo.GetMD5();
+                        using (var context = new DownloadsContext())
+                        {
+                            var md5 = fileInfo.GetMD5();
 
-                        if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
-                        {
-                            this.logger.LogInformation($"The '{fileInfo.Name}' file was already downloaded.");
-                            File.Delete(e.FullPath);
+                            if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
+                            {
+                                this.logger.LogWarning($"The '{fileInfo.Name}' file was already downloaded.");
+                                File.Delete(e.FullPath);
+                            }
+                            else
+                            {
+                                context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
+                                context.SaveChanges();
+                                this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
+                            }
                         }
-                        else
-                        {
-                            context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
-                            context.SaveChangesAsync();
-                            this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
-                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        this.logger.LogError(exception, exception.Message);
                     }
                 }
             };
@@ -59,21 +66,28 @@ namespace DownloadsMonitor
 
                 if (this.extensions.Contains(fileInfo.Extension))
                 {
-                    using (var context = new DownloadsContext())
+                    try
                     {
-                        var md5 = fileInfo.GetMD5();
+                        using (var context = new DownloadsContext())
+                        {
+                            var md5 = fileInfo.GetMD5();
 
-                        if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
-                        {
-                            this.logger.LogInformation($"The '{fileInfo.Name}' file was already downloaded.");
-                            File.Delete(e.FullPath);
+                            if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
+                            {
+                                this.logger.LogWarning($"The '{fileInfo.Name}' file was already downloaded.");
+                                File.Delete(e.FullPath);
+                            }
+                            else
+                            {
+                                context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
+                                context.SaveChanges();
+                                this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
+                            }
                         }
-                        else
-                        {
-                            context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
-                            context.SaveChangesAsync();
-                            this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
-                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        this.logger.LogError(exception, exception.Message);
                     }
                 }
             };
