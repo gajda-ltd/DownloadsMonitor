@@ -11,8 +11,9 @@ namespace DownloadsMonitor
     using Extensions;
     using Models;
 
-    public class Worker : BackgroundService
+    public sealed class Worker : BackgroundService
     {
+        private volatile bool disposed;
         private readonly ILogger<Worker> logger;
         private readonly IReadOnlyList<string> extensions = new List<string> { ".azw", ".azw3", ".epub", ".mobi", ".pdf", };
         private readonly FileSystemWatcher fileSystemWatcher = new FileSystemWatcher();
@@ -93,21 +94,41 @@ namespace DownloadsMonitor
             };
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             this.fileSystemWatcher.EnableRaisingEvents = true;
 
-            while (!stoppingToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
-
+                await Task.Delay(5, cancellationToken);
             }
 
             this.fileSystemWatcher.EnableRaisingEvents = false;
         }
 
+        ~Worker()
+        {
+            this.Dispose(false);
+        }
+
         public override void Dispose()
         {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        private void Dispose(bool disposing)
+        {
+            if (this.disposed)
+            {
+                return;
+            }
 
+            if (disposing)
+            {
+                this.fileSystemWatcher.Dispose();
+            }
+
+            this.disposed = true;
         }
     }
 }
