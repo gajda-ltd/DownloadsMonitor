@@ -1,20 +1,23 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
-namespace DownloadsMonitor.Migrations
+﻿namespace DownloadsMonitor.Migrations
 {
+    using System;
+    using System.Diagnostics.Contracts;
+
+    using Microsoft.EntityFrameworkCore.Migrations;
+
     public partial class InitialCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            Contract.Assert(migrationBuilder != null);
             migrationBuilder.CreateTable(
                 name: "Entries",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(nullable: false),
-                    FileName = table.Column<string>(maxLength: 256, nullable: false),
-                    Length = table.Column<long>(nullable: false),
-                    MD5 = table.Column<string>(maxLength: 48, nullable: false)
+                    Id = table.Column<Guid>(),
+                    FileName = table.Column<string>(maxLength: 256),
+                    Length = table.Column<long>(),
+                    MD5 = table.Column<string>(maxLength: 48)
                 },
                 constraints: table =>
                 {
@@ -24,8 +27,8 @@ namespace DownloadsMonitor.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Entries");
+            Contract.Assert(migrationBuilder != null);
+            migrationBuilder.DropTable(name: "Entries");
         }
     }
 }

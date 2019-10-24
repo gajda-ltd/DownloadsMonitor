@@ -6,9 +6,12 @@ namespace DownloadsMonitor
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+
+    using Extensions;
+
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
-    using Extensions;
+
     using Models;
 
     public sealed class Worker : BackgroundService
@@ -18,6 +21,7 @@ namespace DownloadsMonitor
         private readonly IReadOnlyList<string> extensions = new List<string> { ".azw", ".azw3", ".epub", ".mobi", ".pdf", };
         private readonly FileSystemWatcher fileSystemWatcher = new FileSystemWatcher();
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public Worker(ILogger<Worker> logger)
         {
             this.logger = logger;
@@ -32,21 +36,19 @@ namespace DownloadsMonitor
                 {
                     try
                     {
-                        using (var context = new DownloadsContext())
-                        {
-                            var md5 = fileInfo.GetMD5();
+                        using var context = new DownloadsContext();
+                        var md5 = fileInfo.GetMD5();
 
-                            if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
-                            {
-                                this.logger.LogWarning($"The '{fileInfo.Name}' file was already downloaded.");
-                                File.Delete(e.FullPath);
-                            }
-                            else
-                            {
-                                context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
-                                context.SaveChanges();
-                                this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
-                            }
+                        if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
+                        {
+                            this.logger.LogWarning($"The '{fileInfo.Name}' file was already downloaded.");
+                            File.Delete(e.FullPath);
+                        }
+                        else
+                        {
+                            context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
+                            context.SaveChanges();
+                            this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
                         }
                     }
                     catch (Exception exception)
@@ -69,21 +71,19 @@ namespace DownloadsMonitor
                 {
                     try
                     {
-                        using (var context = new DownloadsContext())
-                        {
-                            var md5 = fileInfo.GetMD5();
+                        using var context = new DownloadsContext();
+                        var md5 = fileInfo.GetMD5();
 
-                            if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
-                            {
-                                this.logger.LogWarning($"The '{fileInfo.Name}' file was already downloaded.");
-                                File.Delete(e.FullPath);
-                            }
-                            else
-                            {
-                                context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
-                                context.SaveChanges();
-                                this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
-                            }
+                        if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
+                        {
+                            this.logger.LogWarning($"The '{fileInfo.Name}' file was already downloaded.");
+                            File.Delete(e.FullPath);
+                        }
+                        else
+                        {
+                            context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
+                            context.SaveChanges();
+                            this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
                         }
                     }
                     catch (Exception exception)
@@ -100,7 +100,7 @@ namespace DownloadsMonitor
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(5, cancellationToken);
+                await Task.Delay(5, cancellationToken).ConfigureAwait(false);
             }
 
             this.fileSystemWatcher.EnableRaisingEvents = false;
