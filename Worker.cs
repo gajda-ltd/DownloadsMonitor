@@ -16,17 +16,15 @@ namespace DownloadsMonitor
 
     public sealed class Worker : BackgroundService
     {
+        private const string DEFAULT_FOLDER = "Downloads";
         private volatile bool disposed;
-        private readonly ILogger<Worker> logger;
         private readonly IReadOnlyList<string> extensions = new List<string> { ".azw", ".azw3", ".epub", ".mobi", ".pdf", };
         private readonly FileSystemWatcher fileSystemWatcher = new FileSystemWatcher();
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
         public Worker(ILogger<Worker> logger)
         {
-            this.logger = logger;
-
-            this.fileSystemWatcher.Path = Path.Combine(Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.Personal)), "Downloads");
+            this.fileSystemWatcher.Path = Path.Combine(Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.Personal)), DEFAULT_FOLDER);
 
             this.fileSystemWatcher.Created += (sender, e) =>
             {
@@ -39,21 +37,36 @@ namespace DownloadsMonitor
                         using var context = new DownloadsContext();
                         var md5 = fileInfo.GetMD5();
 
-                        if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
+                        if (context.Entries.Any(c => c.Length == fileInfo.Length && c.MD5 == md5))
                         {
-                            this.logger.LogWarning($"The '{fileInfo.Name}' file was already downloaded.");
-                            File.Delete(e.FullPath);
+                            logger.LogWarning("The '{name}' file was already downloaded.", fileInfo.Name);
+
+                            try
+                            {
+                                logger.LogDebug("Deleting '{name}' file.", fileInfo.Name);
+                                File.Delete(fileInfo.FullName);
+                                logger.LogDebug("Deleted '{name}' file.", fileInfo.Name);
+                            }
+                            catch (Exception exception)
+                            {
+                                logger.LogError(exception.Message, exception);
+                            }
                         }
                         else
                         {
-                            context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
+                            context.Entries.Add(new FileEntry
+                            {
+                                FileName = fileInfo.Name,
+                                Length = fileInfo.Length,
+                                MD5 = md5,
+                            });
                             context.SaveChanges();
-                            this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
+                            logger.LogInformation("The '{name}' file was added.", fileInfo.Name);
                         }
                     }
                     catch (Exception exception)
                     {
-                        this.logger.LogError(exception, exception.Message);
+                        logger.LogError(exception, exception.Message);
                     }
                 }
             };
@@ -74,21 +87,30 @@ namespace DownloadsMonitor
                         using var context = new DownloadsContext();
                         var md5 = fileInfo.GetMD5();
 
-                        if (context.Entries.Any(e => e.Length == fileInfo.Length && e.MD5 == md5))
+                        if (context.Entries.Any(c => c.Length == fileInfo.Length && c.MD5 == md5))
                         {
-                            this.logger.LogWarning($"The '{fileInfo.Name}' file was already downloaded.");
-                            File.Delete(e.FullPath);
+                            logger.LogWarning("The '{name}' file was already downloaded.", fileInfo.Name);
+                            try
+                            {
+                                logger.LogDebug("Deleting '{name}' file.", fileInfo.Name);
+                                File.Delete(fileInfo.FullName);
+                                logger.LogDebug("Deleted '{name}' file.", fileInfo.Name);
+                            }
+                            catch (Exception exception)
+                            {
+                                logger.LogError(exception.Message, exception);
+                            }
                         }
                         else
                         {
                             context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
                             context.SaveChanges();
-                            this.logger.LogInformation($"The '{fileInfo.Name}' file was added.");
+                            logger.LogInformation("The '{name}' file was added.", fileInfo.Name);
                         }
                     }
                     catch (Exception exception)
                     {
-                        this.logger.LogError(exception, exception.Message);
+                        logger.LogError(exception, exception.Message);
                     }
                 }
             };

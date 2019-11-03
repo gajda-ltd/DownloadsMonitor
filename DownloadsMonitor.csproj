@@ -4,7 +4,18 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UserSecretsId>dotnet-DownloadsMonitor-F7AD2B9E-4666-4DDC-A2A0-B2379B2D064F</UserSecretsId>
     <StartupObject>DownloadsMonitor.Program</StartupObject>
+    <!--<PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <LinkDuringPublish>true</LinkDuringPublish>
+    <ShowLinkerSizeComparison>true</ShowLinkerSizeComparison>-->
   </PropertyGroup>
+
+  <!--<ItemGroup>
+    <TrimmerRootAssembly Include="System.Data.SqlClient" />
+    <TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore.SqlServer" />
+  </ItemGroup>-->
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
@@ -21,6 +32,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="3.0.0" />
     <PackageReference Include="Seq.Extensions.Logging" Version="4.0.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
   </ItemGroup>
 </Project>
