@@ -1,11 +1,11 @@
-namespace DownloadsMonitor.Models
+namespace DownloadsMonitor.Domain.Commands
 {
     using System;
     using System.ComponentModel.DataAnnotations;
+    using MediatR;
 
-    public sealed class FileEntry
+    public sealed class AddFileEntryCommand : IRequest
     {
-        [Key]
         public Guid Id { get; set; }
 
         [Required]

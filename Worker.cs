@@ -1,5 +1,11 @@
 namespace DownloadsMonitor
 {
+    using Domain.Commands;
+    using Domain.Queries;
+    using Extensions;
+    using MediatR;
+    using Microsoft.Extensions.Hosting;
+    using Microsoft.Extensions.Logging;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -7,24 +13,21 @@ namespace DownloadsMonitor
     using System.Threading;
     using System.Threading.Tasks;
 
-    using Extensions;
-
-    using Microsoft.Extensions.Hosting;
-    using Microsoft.Extensions.Logging;
-
-    using Models;
-
     public sealed class Worker : BackgroundService
     {
-        private const string DEFAULT_FOLDER = "Downloads";
-        private volatile bool disposed;
+        private const string DefaultFolderName = "Downloads";
         private readonly IReadOnlyList<string> extensions = new List<string> { ".azw", ".azw3", ".epub", ".mobi", ".pdf", };
         private readonly FileSystemWatcher fileSystemWatcher = new FileSystemWatcher();
+        private readonly ILogger<Worker> logger;
+        private readonly IMediator mediator;
+        private volatile bool disposed;
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "<Pending>")]
-        public Worker(ILogger<Worker> logger)
+        public Worker(ILogger<Worker> logger, IMediator mediator)
         {
-            this.fileSystemWatcher.Path = Path.Combine(Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.Personal)), DEFAULT_FOLDER);
+            this.logger = logger;
+            this.mediator = mediator;
+
+            this.fileSystemWatcher.Path = Path.Combine(Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.Personal)), DefaultFolderName);
 
             this.fileSystemWatcher.Created += (sender, e) =>
             {
@@ -34,34 +37,30 @@ namespace DownloadsMonitor
                 {
                     try
                     {
-                        using var context = new DownloadsContext();
                         var md5 = fileInfo.GetMD5();
 
-                        if (context.Entries.Any(c => c.Length == fileInfo.Length && c.MD5 == md5))
+                        var fileEntry = this.mediator.Send(new GetEntryQuery
                         {
-                            logger.LogWarning("The '{name}' file was already downloaded.", fileInfo.Name);
+                            Length = fileInfo.Length,
+                            Md5 = md5,
+                        });
 
-                            try
-                            {
-                                logger.LogDebug("Deleting '{name}' file.", fileInfo.Name);
-                                File.Delete(fileInfo.FullName);
-                                logger.LogDebug("Deleted '{name}' file.", fileInfo.Name);
-                            }
-                            catch (Exception exception)
-                            {
-                                logger.LogError(exception.Message, exception);
-                            }
-                        }
-                        else
+                        if (fileEntry is null)
                         {
-                            context.Entries.Add(new FileEntry
+                            _ = this.mediator.Send(new AddFileEntryCommand
                             {
                                 FileName = fileInfo.Name,
                                 Length = fileInfo.Length,
                                 MD5 = md5,
                             });
-                            context.SaveChanges();
-                            logger.LogInformation("The '{name}' file was added.", fileInfo.Name);
+                        }
+                        else
+                        {
+                            _ = this.mediator.Send(new DeleteFileCommand
+                            {
+                                FullName = fileInfo.FullName,
+                                Name = fileInfo.Name,
+                            });
                         }
                     }
                     catch (Exception exception)
@@ -73,39 +72,36 @@ namespace DownloadsMonitor
 
             this.fileSystemWatcher.Changed += (sender, e) =>
             {
-                if (string.IsNullOrWhiteSpace(e.FullPath))
-                {
-                    return;
-                }
-
                 var fileInfo = new FileInfo(e.FullPath);
 
                 if (this.extensions.Contains(fileInfo.Extension))
                 {
                     try
                     {
-                        using var context = new DownloadsContext();
                         var md5 = fileInfo.GetMD5();
 
-                        if (context.Entries.Any(c => c.Length == fileInfo.Length && c.MD5 == md5))
+                        var fileEntry = this.mediator.Send(new GetEntryQuery
                         {
-                            logger.LogWarning("The '{name}' file was already downloaded.", fileInfo.Name);
-                            try
+                            Length = fileInfo.Length,
+                            Md5 = md5,
+                        });
+
+                        if (fileEntry is null)
+                        {
+                            _ = this.mediator.Send(new AddFileEntryCommand
                             {
-                                logger.LogDebug("Deleting '{name}' file.", fileInfo.Name);
-                                File.Delete(fileInfo.FullName);
-                                logger.LogDebug("Deleted '{name}' file.", fileInfo.Name);
-                            }
-                            catch (Exception exception)
-                            {
-                                logger.LogError(exception.Message, exception);
-                            }
+                                FileName = fileInfo.Name,
+                                Length = fileInfo.Length,
+                                MD5 = md5,
+                            });
                         }
                         else
                         {
-                            context.Entries.Add(new FileEntry { FileName = fileInfo.Name, Length = fileInfo.Length, MD5 = md5, });
-                            context.SaveChanges();
-                            logger.LogInformation("The '{name}' file was added.", fileInfo.Name);
+                            _ = this.mediator.Send(new DeleteFileCommand
+                            {
+                                FullName = fileInfo.FullName,
+                                Name = fileInfo.Name,
+                            });
                         }
                     }
                     catch (Exception exception)
@@ -114,6 +110,17 @@ namespace DownloadsMonitor
                     }
                 }
             };
+        }
+
+        ~Worker()
+        {
+            this.Dispose(false);
+        }
+
+        public override void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -128,16 +135,6 @@ namespace DownloadsMonitor
             this.fileSystemWatcher.EnableRaisingEvents = false;
         }
 
-        ~Worker()
-        {
-            this.Dispose(false);
-        }
-
-        public override void Dispose()
-        {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
         private void Dispose(bool disposing)
         {
             if (this.disposed)

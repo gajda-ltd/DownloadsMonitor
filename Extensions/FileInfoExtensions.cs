@@ -7,7 +7,6 @@ namespace DownloadsMonitor.Extensions
 
     public static class FileInfoExtensions
     {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5351:Do Not Use Broken Cryptographic Algorithms", Justification = "<Pending>")]
         public static string GetMD5(this FileInfo self)
         {
             Contract.Assert(self != null);

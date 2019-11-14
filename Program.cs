@@ -1,5 +1,7 @@
 namespace DownloadsMonitor
 {
+    using DownloadsMonitor.Models;
+    using MediatR;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
@@ -16,7 +18,10 @@ namespace DownloadsMonitor
                 .UseWindowsService()
                 .ConfigureServices((hostContext, services) =>
                 {
+                    services.AddLocalization(options => options.ResourcesPath = "Resources");
                     services.AddLogging(loggingBuilder => { loggingBuilder.AddSeq(); });
+                    services.AddDbContext<DownloadsContext>();
+                    services.AddMediatR(typeof(Program).Assembly);
                     services.AddHostedService<Worker>();
                 });
     }

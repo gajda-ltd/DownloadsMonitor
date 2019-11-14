@@ -17,7 +17,7 @@
                     Id = table.Column<Guid>(),
                     FileName = table.Column<string>(maxLength: 256),
                     Length = table.Column<long>(),
-                    MD5 = table.Column<string>(maxLength: 48)
+                    MD5 = table.Column<string>(maxLength: 48),
                 },
                 constraints: table =>
                 {
