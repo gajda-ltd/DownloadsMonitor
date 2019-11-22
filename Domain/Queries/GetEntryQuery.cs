@@ -1,5 +1,6 @@
 namespace DownloadsMonitor.Domain.Queries
 {
+    using System.ComponentModel.DataAnnotations;
     using DownloadsMonitor.Models;
     using MediatR;
 
@@ -7,6 +8,7 @@ namespace DownloadsMonitor.Domain.Queries
     {
         public long Length { get; set; }
 
-        public string Md5 { get; set; }
+        [Required]
+        public string Md5 { get; set; } = string.Empty;
     }
 }

@@ -1,11 +1,14 @@
 namespace DownloadsMonitor.Domain.Commands
 {
+    using System.ComponentModel.DataAnnotations;
     using MediatR;
 
     public sealed class DeleteFileCommand : IRequest
     {
-        public string Name { get; set; }
+        [Required]
+        public string Name { get; set; } = string.Empty;
 
-        public string FullName { get; set; }
+        [Required]
+        public string FullName { get; set; } = string.Empty;
     }
 }

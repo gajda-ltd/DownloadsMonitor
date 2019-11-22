@@ -1,10 +1,10 @@
 namespace DownloadsMonitor
 {
-    using DownloadsMonitor.Models;
     using MediatR;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
+    using Models;
 
     internal static class Program
     {

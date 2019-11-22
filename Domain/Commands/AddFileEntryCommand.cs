@@ -10,13 +10,13 @@ namespace DownloadsMonitor.Domain.Commands
 
         [Required]
         [StringLength(256)]
-        public string FileName { get; set; }
+        public string FileName { get; set; } = string.Empty;
 
         [Required]
         public long Length { get; set; }
 
         [Required]
         [StringLength(48)]
-        public string MD5 { get; set; }
+        public string MD5 { get; set; } = string.Empty;
     }
 }

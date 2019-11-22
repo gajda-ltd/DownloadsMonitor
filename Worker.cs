@@ -1,21 +1,21 @@
 namespace DownloadsMonitor
 {
-    using Domain.Commands;
-    using Domain.Queries;
-    using Extensions;
-    using MediatR;
-    using Microsoft.Extensions.Hosting;
-    using Microsoft.Extensions.Logging;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Domain.Commands;
+    using Domain.Queries;
+    using Extensions;
+    using MediatR;
+    using Microsoft.Extensions.Hosting;
+    using Microsoft.Extensions.Logging;
 
     public sealed class Worker : BackgroundService
     {
-        private const string DefaultFolderName = "Downloads";
+        private const string DEFAULT_FOLDER_NAME = "Downloads";
         private readonly IReadOnlyList<string> extensions = new List<string> { ".azw", ".azw3", ".epub", ".mobi", ".pdf", };
         private readonly FileSystemWatcher fileSystemWatcher = new FileSystemWatcher();
         private readonly ILogger<Worker> logger;
@@ -26,8 +26,14 @@ namespace DownloadsMonitor
         {
             this.logger = logger;
             this.mediator = mediator;
+            var personalFolder = Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.Personal));
 
-            this.fileSystemWatcher.Path = Path.Combine(Path.GetDirectoryName(Environment.GetFolderPath(Environment.SpecialFolder.Personal)), DefaultFolderName);
+            if (string.IsNullOrWhiteSpace(personalFolder))
+            {
+                return;
+            }
+
+            this.fileSystemWatcher.Path = Path.Combine(personalFolder, DEFAULT_FOLDER_NAME);
 
             this.fileSystemWatcher.Created += (sender, e) =>
             {
@@ -123,13 +129,13 @@ namespace DownloadsMonitor
             GC.SuppressFinalize(this);
         }
 
-        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             this.fileSystemWatcher.EnableRaisingEvents = true;
 
-            while (!cancellationToken.IsCancellationRequested)
+            while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(5, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(5, stoppingToken).ConfigureAwait(false);
             }
 
             this.fileSystemWatcher.EnableRaisingEvents = false;
