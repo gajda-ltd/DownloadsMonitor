@@ -13,9 +13,9 @@ namespace DownloadsMonitor
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
 
-    public sealed class Worker : BackgroundService
+    public class Worker : BackgroundService
     {
-        private const string DEFAULT_FOLDER_NAME = "Downloads";
+        private const string DefaultFolderName = "Downloads";
         private readonly IReadOnlyList<string> extensions = new List<string> { ".azw", ".azw3", ".epub", ".mobi", ".pdf", };
         private readonly FileSystemWatcher fileSystemWatcher = new FileSystemWatcher();
         private readonly ILogger<Worker> logger;
@@ -33,7 +33,7 @@ namespace DownloadsMonitor
                 return;
             }
 
-            this.fileSystemWatcher.Path = Path.Combine(personalFolder, DEFAULT_FOLDER_NAME);
+            this.fileSystemWatcher.Path = Path.Combine(personalFolder, DefaultFolderName);
 
             this.fileSystemWatcher.Created += (sender, e) =>
             {
@@ -141,7 +141,7 @@ namespace DownloadsMonitor
             this.fileSystemWatcher.EnableRaisingEvents = false;
         }
 
-        private void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (this.disposed)
             {

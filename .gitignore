@@ -1,3 +1,5 @@
+.sonarlint
+.sonarqube
 .vs
 .vscode
 [Bb]in/
